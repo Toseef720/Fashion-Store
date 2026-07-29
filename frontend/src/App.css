@@ -1,0 +1,16 @@
+@import url('https://fonts.googleapis.com/css2?family=Advent+Pro:wght@100;200;300;400;500;600;700&display=swap');
+@import "tailwindcss";
+
+
+:root {
+  font-family: 'Advent Pro', sans-serif;
+}
+
+@theme {
+  --color-primary: #6B8E7F;
+  --color-secondary: #E5E5E5;
+  --color-light: #F5F5F5;
+  --color-dark: #1A1A1A;
+  --color-accent: #FFD84D;
+}
+
