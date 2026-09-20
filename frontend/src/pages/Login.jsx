@@ -16,12 +16,15 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    setLoading(true);
 
-    const res = login(email, password);
+    const res = await login(email, password);
+    setLoading(false);
 
     if (!res.success) {
       setError(res.message);
@@ -30,9 +33,9 @@ export default function Login() {
     }
 
     showToast("Login successful 🎉");
-    setTimeout(()=>{
+    setTimeout(() => {
       navigate("/");
-    }, 2000) 
+    }, 2000);
   };
 
 
@@ -104,9 +107,10 @@ export default function Login() {
 
           <button
             type="submit"
-            className="w-full bg-black text-white py-3 rounded hover:bg-gray-800 transition"
+            disabled={loading}
+            className="w-full bg-black text-white py-3 rounded hover:bg-gray-800 transition disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            CONTINUE
+            {loading ? "SIGNING IN..." : "CONTINUE"}
           </button>
 
           {/* SIGN UP LINK */}

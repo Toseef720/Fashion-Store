@@ -1,94 +1,57 @@
-import { createContext, useState, useEffect, useContext } from "react";
-import usersData from "../data/users";
+import { createContext, useState, useContext } from "react";
+import { loginUser as apiLogin, registerUser as apiRegister } from "../services/api";
 
 export const AuthContext = createContext();
 
 export default function AuthProvider({ children }) {
 
-  // Load users from localStorage OR fallback to usersData
-  const [users, setUsers] = useState(() => {
-    const savedUsers = localStorage.getItem("users");
-    return savedUsers ? JSON.parse(savedUsers) : usersData;
-  });
-
-  // Load current user
+  // Load current user (with token) from localStorage
   const [currentUser, setCurrentUser] = useState(() => {
     const saved = localStorage.getItem("user");
     return saved ? JSON.parse(saved) : null;
   });
 
-  // Persist users database
-  useEffect(() => {
-    localStorage.setItem("users", JSON.stringify(users));
-  }, [users]);
-
-  // Persist logged-in user
-  useEffect(() => {
-    if (currentUser) {
-      localStorage.setItem("user", JSON.stringify(currentUser));
-    } else {
-      localStorage.removeItem("user");
+  // ─── Register ───────────────────────────────────────────────────────────────
+  const register = async (name, email, password) => {
+    try {
+      const { data } = await apiRegister(name, email, password);
+      // data = { _id, name, email, isAdmin, token }
+      setCurrentUser(data);
+      localStorage.setItem("user", JSON.stringify(data));
+      return { success: true };
+    } catch (err) {
+      const message =
+        err.response?.data?.message || "Registration failed. Please try again.";
+      return { success: false, message };
     }
-  }, [currentUser]);
-
-  const register = (name, email, password) => {
-    const exists = users.find(u => u.email === email);
-
-    if (exists) {
-      return { success: false, message: "Email already exists" };
-    }
-
-    const newUser = {
-      id: Date.now(),
-      name,
-      email,
-      password,
-      phone: "",
-      image: "",
-      address: {
-        street: "",
-        city: "",
-        state: "",
-        zip: "",
-        country: ""
-      },
-      orders: []
-    };
-
-    setUsers([...users, newUser]);
-    setCurrentUser(newUser);
-
-    return { success: true };
   };
 
-  const login = (email, password) => {
-    const user = users.find(
-      u => u.email === email && u.password === password
-    );
-
-    if (!user) {
-      return { success: false, message: "Invalid credentials" };
+  // ─── Login ──────────────────────────────────────────────────────────────────
+  const login = async (email, password) => {
+    try {
+      const { data } = await apiLogin(email, password);
+      // data = { _id, name, email, isAdmin, token }
+      setCurrentUser(data);
+      localStorage.setItem("user", JSON.stringify(data));
+      return { success: true };
+    } catch (err) {
+      const message =
+        err.response?.data?.message || "Login failed. Please try again.";
+      return { success: false, message };
     }
-
-    setCurrentUser(user);
-    return { success: true };
   };
 
+  // ─── Logout ─────────────────────────────────────────────────────────────────
   const logout = () => {
     setCurrentUser(null);
+    localStorage.removeItem("user");
   };
 
-  // 🔥 NEW: Update Profile
+  // ─── Update Profile (local state only – extend later if you add API) ─────────
   const updateProfile = (updatedData) => {
     const updatedUser = { ...currentUser, ...updatedData };
-
-    const updatedUsers = users.map(u =>
-      u.id === currentUser.id ? updatedUser : u
-    );
-
-    setUsers(updatedUsers);
     setCurrentUser(updatedUser);
-
+    localStorage.setItem("user", JSON.stringify(updatedUser));
     return { success: true };
   };
 
@@ -99,7 +62,7 @@ export default function AuthProvider({ children }) {
         register,
         login,
         logout,
-        updateProfile
+        updateProfile,
       }}
     >
       {children}

@@ -22,6 +22,15 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false, // Normal users user rahenge, admin products add/edit kar sakega
     },
+    addresses: [
+      {
+        street: { type: String, required: true },
+        city: { type: String, required: true },
+        state: { type: String, default: "" },
+        zip: { type: String, default: "" },
+        country: { type: String, required: true },
+      },
+    ],
   },
   {
     timestamps: true, // Automatically `createdAt` aur `updatedAt` add kar dega

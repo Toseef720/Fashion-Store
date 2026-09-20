@@ -17,8 +17,9 @@ export default function Register({setToast}) {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
 
@@ -32,10 +33,13 @@ export default function Register({setToast}) {
       return;
     }
 
-    const res = register(name, email, password);
+    setLoading(true);
+    const res = await register(name, email, password);
+    setLoading(false);
 
     if (!res.success) {
       setError(res.message);
+      showToast(res.message);
       return;
     }
     
@@ -43,8 +47,6 @@ export default function Register({setToast}) {
     setTimeout(() => {
       navigate("/");
     }, 2000);
-
-    navigate("/");
   };
 
   return (
@@ -146,9 +148,10 @@ export default function Register({setToast}) {
 
           <button
             type="submit"
-            className="w-full bg-black text-white py-3 rounded hover:bg-gray-800 transition"
+            disabled={loading}
+            className="w-full bg-black text-white py-3 rounded hover:bg-gray-800 transition disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            CREATE ACCOUNT
+            {loading ? "CREATING ACCOUNT..." : "CREATE ACCOUNT"}
           </button>
 
           <p className="text-sm text-center">
