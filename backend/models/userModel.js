@@ -22,6 +22,14 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false, // Normal users user rahenge, admin products add/edit kar sakega
     },
+    phone: {
+      type: String,
+      default: "",
+    },
+    profilePic: {
+      type: String,
+      default: "",
+    },
     addresses: [
       {
         street: { type: String, required: true },

@@ -1,6 +1,7 @@
 import User from "../models/userModel.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import cloudinary from "../config/cloudinary.js";
 
 // Helper function to generate a signed JWT
 const generateToken = (id) => {
@@ -39,6 +40,8 @@ export const registerUser = async (req, res) => {
         _id: user._id,
         name: user.name,
         email: user.email,
+        phone: user.phone || "",
+        profilePic: user.profilePic || "",
         isAdmin: user.isAdmin,
         addresses: user.addresses || [],
         token: generateToken(user._id),
@@ -66,6 +69,8 @@ export const loginUser = async (req, res) => {
         _id: user._id,
         name: user.name,
         email: user.email,
+        phone: user.phone || "",
+        profilePic: user.profilePic || "",
         isAdmin: user.isAdmin,
         addresses: user.addresses || [],
         token: generateToken(user._id),
@@ -163,6 +168,130 @@ export const deleteAddress = async (req, res) => {
     await user.save();
 
     res.status(200).json(user.addresses);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Get user profile
+// @route   GET /api/users/profile
+export const getUserProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    res.status(200).json({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      phone: user.phone || "",
+      profilePic: user.profilePic || "",
+      isAdmin: user.isAdmin,
+      addresses: user.addresses || [],
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Upload profile photo to Cloudinary / MongoDB
+// @route   PUT /api/users/profile-pic
+export const uploadProfilePic = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: "No image file provided" });
+    }
+
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    let imageUrl = "";
+
+    // 1. If Cloudinary credentials exist, upload to Cloudinary
+    if (
+      process.env.CLOUDINARY_CLOUD_NAME &&
+      process.env.CLOUDINARY_API_KEY &&
+      process.env.CLOUDINARY_API_SECRET
+    ) {
+      try {
+        const uploadToCloudinary = () => {
+          return new Promise((resolve, reject) => {
+            const stream = cloudinary.uploader.upload_stream(
+              {
+                folder: "fashion_store/profiles",
+                transformation: [
+                  { width: 500, height: 500, crop: "fill", gravity: "face" },
+                ],
+              },
+              (error, result) => {
+                if (error) return reject(error);
+                resolve(result);
+              }
+            );
+            stream.end(req.file.buffer);
+          });
+        };
+
+        const result = await uploadToCloudinary();
+        imageUrl = result.secure_url;
+      } catch (cloudErr) {
+        console.warn("Cloudinary upload failed, falling back to MongoDB data URI:", cloudErr.message);
+      }
+    }
+
+    // 2. If Cloudinary wasn't configured or failed, save directly as Data URI into MongoDB
+    if (!imageUrl) {
+      const b64 = Buffer.from(req.file.buffer).toString("base64");
+      imageUrl = `data:${req.file.mimetype};base64,${b64}`;
+    }
+
+    // Save to MongoDB
+    user.profilePic = imageUrl;
+    await user.save();
+
+    res.status(200).json({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      phone: user.phone || "",
+      profilePic: user.profilePic,
+      isAdmin: user.isAdmin,
+      addresses: user.addresses || [],
+    });
+  } catch (error) {
+    console.error("Profile pic upload error:", error);
+    res.status(500).json({ message: error.message || "Failed to upload image" });
+  }
+};
+
+// @desc    Update user profile details (name, phone, profilePic)
+// @route   PUT /api/users/profile
+export const updateUserProfile = async (req, res) => {
+  try {
+    const { name, phone, profilePic } = req.body;
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (name) user.name = name.trim();
+    if (phone !== undefined) user.phone = phone.trim();
+    if (profilePic !== undefined) user.profilePic = profilePic;
+
+    await user.save();
+
+    res.status(200).json({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      phone: user.phone || "",
+      profilePic: user.profilePic || "",
+      isAdmin: user.isAdmin,
+      addresses: user.addresses || [],
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

@@ -177,9 +177,13 @@ export default function Navbar({ setCartOpen }) {
                       {/* Profile Icon */}
                       <button
                         onClick={() => setShowMenu(!showMenu)}
-                        className="relative"
+                        className="relative flex items-center justify-center"
                       >
-                        <img src={user} className="w-6 h-6 block" />
+                        <img
+                          src={currentUser?.profilePic || user}
+                          className="w-7 h-7 rounded-full object-cover block"
+                          alt="Profile"
+                        />
 
                         {/* Green Online Dot */}
                         <span className="

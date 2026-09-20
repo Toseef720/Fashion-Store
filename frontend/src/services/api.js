@@ -41,4 +41,16 @@ export const updateAddress = (id, addressData) =>
 export const deleteAddress = (id) =>
   API.delete(`/api/users/addresses/${id}`);
 
+// ─── Profile Endpoints ────────────────────────────────────────────────────────
+
+export const getUserProfile = () => API.get("/api/users/profile");
+
+export const uploadProfilePic = (formData) =>
+  API.put("/api/users/profile-pic", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+
+export const updateProfileInfo = (profileData) =>
+  API.put("/api/users/profile", profileData);
+
 export default API;
